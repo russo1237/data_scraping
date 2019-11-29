@@ -1,7 +1,3 @@
-# Sample urls:
-#   1) https://www.valueresearchonline.com/funds/newsnapshot.asp?schemecode=15831
-#   2) https://www.valueresearchonline.com/funds/newsnapshot.asp?schemecode=16109
-
 import urllib3
 from bs4 import BeautifulSoup
 import xlsxwriter
@@ -9,10 +5,10 @@ import xlsxwriter
 connection_pooling = urllib3.PoolManager()
 
 D_stocks = {}
-num_funds = input("How many mutual funds you want to compare: " )
-urls = input("Enter the urls of mutual funds one by one ")
-# import pdb;pdb.set_trace()
-urls = urls.split()
+urls = []
+input_file = open("stocks_url_list.txt")
+for line in input_file:
+    urls.append(line)
 
 for url in urls :
     stock_req = connection_pooling.request('GET',url)
@@ -20,16 +16,8 @@ for url in urls :
     all_tables= soup.find_all('table')
     title_name = soup.find_all('title')
     name = title_name[0].text
-    # D_stocks[url]["Name"] = name
-
-    # for div in all_divs:
-    #     if (div["name"] == "snapshot-fund-name"):
-    #         print(div)
-
-    # import pdb;pdb.set_trace()
     D_stocks[url] = {}
     D_stocks[url]["Name"] = name
-
     table1 = all_tables[0]
     tds_t1 = table1.find_all('td')
     assets = tds_t1[3].text.split()
@@ -56,33 +44,32 @@ print(D_stocks)
 
 workbook = xlsxwriter.Workbook('Report.xlsx')
 report = workbook.add_worksheet()
-cell_format = workbook.add_format({'bold': True,'align': 'center'})
+cell_format = workbook.add_format({'bold': True,'align': 'center','fg_color': 'orange',    'border': 1,
+})
+cell_format_1 = workbook.add_format({'bold': True,'align': 'center','fg_color': 'yellow',    'border': 1,
+})
+
 cell_format_normal = workbook.add_format({'align': 'center'})
 row = 3
 col = 0
 L_index = ["Name of Fund", "Assets", "Expense ratio", "Fund YTD", "Fund 1yr", "Fund 3 yr", "Fund 5 yr", "Fund 10 yr"]
-report.write(row, col+3,  'Analysis of FUNDS')
 row = row + 2
 report.set_column(0,0,25)
-report.set_column(1,1,15)
-report.set_column(2,2,15)
+report.set_column(1,1,31)
+report.set_column(2,2,24)
 report.set_column(3,3,12)
 report.set_column(4,4,12)
 report.set_column(5,5,12)
 report.set_column(6,6,12)
 report.set_column(7,7,12)
+report.merge_range(3,3,3,6,"Analysis of Funds", cell_format_1)
 
-
-
-
-# row = row +1
 for column in L_index :
     report.write(row, col, column, cell_format)
     col = col + 1
 
 row = row +1
 col = 0
-# import pdb;pdb.set_trace()
 for stock in D_stocks:
     report.write(row,col,D_stocks[stock]["Name"])
     report.write(row,col+1,D_stocks[stock]["Assets:"])
@@ -93,23 +80,5 @@ for stock in D_stocks:
     report.write(row,col+6,D_stocks[stock]["5-Year"],cell_format_normal)
     report.write(row,col+7,D_stocks[stock]["10-Year"],cell_format_normal)
     row = row+1
-    
-    
-    
-
-    
-    
-
-
-
-
-
-
-
 
 workbook.close()
-
-
-
-
-# import pdb;pdb.set_trace()
